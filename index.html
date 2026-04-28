@@ -1,227 +1,52 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>存在しない正方形のジャンプ錯視</title>
+// --- メインアプリケーション ---
+function App() {
+  const [position, setPosition] = useState('top');
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   
-  <!-- Tailwind CSS の読み込み -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  // 1. 初期値を範囲内の 100ms に変更
+  const [intervalMs, setIntervalMs] = useState(100); 
   
-  <!-- React と ReactDOM の読み込み -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
-  <!-- ブラウザ上でJSXを変換するための Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body class="bg-gray-100">
-  <!-- Reactアプリが描画されるマウントポイント -->
-  <div id="root"></div>
+  const isFirstRender = useRef(true);
 
-  <!-- Reactのコード本体 -->
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+  // ... (中略: playJumpSound や useEffect の処理はそのまま) ...
 
-    // --- アイコンコンポーネント (lucide-reactの代わりとしてSVGをインライン定義) ---
-    const ArrowUp = ({ className }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-    );
-    const ArrowDown = ({ className }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-    );
-    const Play = ({ className }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-    );
-    const Pause = ({ className }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-    );
-    const MoveVertical = ({ className }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="8 18 12 22 16 18"></polyline><polyline points="8 6 12 2 16 6"></polyline><line x1="12" y1="2" x2="12" y2="22"></line></svg>
-    );
-
-    // --- 錯視図形の描画コンポーネント ---
-    const Pacman = ({ x, y, rotation, radius }) => (
-      <g transform={`translate(${x}, ${y}) rotate(${rotation})`}>
-        <path 
-          d={`M 0 0 L ${radius} 0 A ${radius} ${radius} 0 1 1 0 ${-radius} Z`} 
-          fill="#1a1a1a" 
-        />
-      </g>
-    );
-
-    const SubjectiveSquare = ({ centerX, centerY, size, radius }) => {
-      const half = size / 2;
-      return (
-        <g>
-          <Pacman x={centerX - half} y={centerY - half} rotation={90} radius={radius} />
-          <Pacman x={centerX + half} y={centerY - half} rotation={180} radius={radius} />
-          <Pacman x={centerX + half} y={centerY + half} rotation={270} radius={radius} />
-          <Pacman x={centerX - half} y={centerY + half} rotation={0} radius={radius} />
-        </g>
-      );
-    };
-
-    // --- メインアプリケーション ---
-    function App() {
-      const [position, setPosition] = useState('top');
-      const [isAutoPlaying, setIsAutoPlaying] = useState(false);
-      const [intervalMs, setIntervalMs] = useState(300);
-      const isFirstRender = useRef(true);
-
-      const playJumpSound = () => {
-        const soundUrl = "https://raw.githubusercontent.com/kono3478/sozai/main/se_jump_001.wav";
-        const audio = new Audio(soundUrl);
-        audio.volume = 0.5;
-        audio.play().catch(e => {
-          console.log("音声再生がブロックされました", e);
-        });
-      };
-
-      useEffect(() => {
-        if (isFirstRender.current) {
-          isFirstRender.current = false;
-          return;
-        }
-        playJumpSound();
-      }, [position]);
-
-      useEffect(() => {
-        let timer;
-        if (isAutoPlaying) {
-          timer = setInterval(() => {
-            setPosition((prev) => (prev === 'top' ? 'bottom' : 'top'));
-          }, intervalMs);
-        }
-        return () => clearInterval(timer);
-      }, [isAutoPlaying, intervalMs]);
-
-      const togglePosition = () => {
-        setPosition((prev) => (prev === 'top' ? 'bottom' : 'top'));
-      };
-
-      const svgWidth = 300;
-      const svgHeight = 400;
-      const pacmanRadius = 35;
-      const squareSize = 100;
-
-      const centerX = 150;
-      const centerY_top = 100;
-      const centerY_bottom = 300;
-
-      const currentY = position === 'top' ? centerY_top : centerY_bottom;
-
-      return (
-        <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4 font-sans text-gray-800 touch-manipulation">
-          <div className="max-w-md w-full flex flex-col gap-5 pt-4">
-            
-            <div className="relative w-full aspect-[3/4] bg-white rounded-2xl shadow-md overflow-hidden flex items-center justify-center select-none">
-              <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full drop-shadow-sm">
-                <defs>
-                  <pattern id="dot-pattern" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
-                    <circle cx="6" cy="6" r="1.5" fill="#cbd5e1" />
-                  </pattern>
-                </defs>
-                <rect x="0" y="0" width="100%" height="100%" fill="url(#dot-pattern)" />
-
-                <SubjectiveSquare 
-                  centerX={centerX} 
-                  centerY={currentY} 
-                  size={squareSize} 
-                  radius={pacmanRadius} 
+  return (
+    // ... (中略) ...
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-gray-700 flex items-center gap-2">
+                  自動再生 <span className="text-xs font-normal text-gray-500">(仮現運動)</span>
+                </span>
+                <button 
+                  onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                  className={`flex items-center gap-1 px-5 py-2 rounded-full font-bold transition-all ${
+                    isAutoPlaying 
+                      ? 'bg-rose-500 text-white shadow-md shadow-rose-200 active:scale-95' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95'
+                  }`}
+                >
+                  {isAutoPlaying ? <><Pause className="w-4 h-4" /> 停止</> : <><Play className="w-4 h-4" /> 再生</>}
+                </button>
+              </div>
+              
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-500 mb-1 px-1">
+                  <span>速い</span>
+                  <span>遅い</span>
+                </div>
+                {/* 2. minを10、maxを250、stepを10に変更 */}
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="250" 
+                  step="10"
+                  value={intervalMs}
+                  onChange={(e) => setIntervalMs(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
                 />
-              </svg>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-md p-5 flex flex-col gap-4">
-              <button 
-                onClick={togglePosition}
-                className="w-full py-4 rounded-xl font-bold text-lg bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-transform shadow-md flex items-center justify-center gap-2"
-              >
-                <MoveVertical className="w-6 h-6" />
-                ジャンプさせる
-              </button>
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => { setPosition('top'); setIsAutoPlaying(false); }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-3 rounded-xl font-semibold transition-colors ${
-                    position === 'top' && !isAutoPlaying ? 'bg-indigo-100 text-indigo-800 ring-2 ring-indigo-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <ArrowUp className="w-5 h-5" /> 上へ
-                </button>
-                <button 
-                  onClick={() => { setPosition('bottom'); setIsAutoPlaying(false); }}
-                  className={`flex-1 flex items-center justify-center gap-1 py-3 rounded-xl font-semibold transition-colors ${
-                    position === 'bottom' && !isAutoPlaying ? 'bg-indigo-100 text-indigo-800 ring-2 ring-indigo-500' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  下へ <ArrowDown className="w-5 h-5" />
-                </button>
-              </div>
-
-              <hr className="border-gray-100" />
-
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                    自動再生 <span className="text-xs font-normal text-gray-500">(仮現運動)</span>
-                  </span>
-                  <button 
-                    onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                    className={`flex items-center gap-1 px-5 py-2 rounded-full font-bold transition-all ${
-                      isAutoPlaying 
-                        ? 'bg-rose-500 text-white shadow-md shadow-rose-200 active:scale-95' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95'
-                    }`}
-                  >
-                    {isAutoPlaying ? <><Pause className="w-4 h-4" /> 停止</> : <><Play className="w-4 h-4" /> 再生</>}
-                  </button>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1 px-1">
-                    <span>速い</span>
-                    <span>遅い</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="100" 
-                    max="800" 
-                    step="50"
-                    value={intervalMs}
-                    onChange={(e) => setIntervalMs(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                  />
-                  <div className="text-center text-xs text-gray-400 mt-2">
-                    切り替え間隔: {intervalMs} ミリ秒
-                  </div>
+                <div className="text-center text-xs text-gray-400 mt-2">
+                  切り替え間隔: {intervalMs} ミリ秒
                 </div>
               </div>
             </div>
-            
-            <div className="bg-indigo-50 p-4 rounded-2xl text-sm leading-relaxed text-indigo-900 border border-indigo-100 shadow-sm mb-4">
-              <strong className="block mb-1 text-indigo-700">💡 錯視の仕組み</strong>
-              <p className="mb-2">
-                4つの黒い図形の欠けた部分が内側を向くことで、脳が勝手に線を補い、中央に<strong>「存在しない正方形の輪郭（主観的輪郭）」</strong>を作り出します。
-              </p>
-              <p className="mb-2">
-                図形が上下に切り替わると、別々の画像ではなく<strong>「ひとつの正方形が移動した」</strong>と脳が解釈するため、正方形が飛び跳ねているように見えます（仮現運動）。
-              </p>
-              <p className="text-indigo-800 bg-indigo-100/50 p-2 rounded-lg text-xs mt-2">
-                ※ 背景に点々があることで、黒い図形が上に乗って背景を隠しているという奥行き感が強まり、錯視がより見えやすくなります。
-              </p>
-            </div>
-
-          </div>
-        </div>
-      );
-    }
-
-    // --- レンダリング ---
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+    // ... (以下略) ...
